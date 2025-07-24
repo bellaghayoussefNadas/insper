@@ -1,0 +1,29 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+               // [required] flutter_background_geolocation
+        maven { url "https://jitpack.io" }
+        // [required] background_fetch
+
+    }
+}
+ext.kotlin_version = '1.9.0'
+ext {
+    compileSdkVersion   = 35                // or higher / as desired
+    targetSdkVersion    = 33                // or higher / as desired
+    minSdkVersion       = 23                // Required minimum
+    appCompatVersion    = "1.4.2"           // or higher / as desired
+    playServicesLocationVersion = "21.0.1"  // or higher / as desired
+}
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
