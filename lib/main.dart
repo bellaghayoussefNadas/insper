@@ -18,7 +18,7 @@ void main() async {
   if (!kIsWeb) {
     await MobileAds.instance.initialize();
     await NotificationService().init();
-    NotificationService().showTestNotification();
+  //  NotificationService().showTestNotification();
     NotificationService().scheduleNotificationEvery6Hours();
   }
 
@@ -135,8 +135,15 @@ class _CitationScreenState extends State<CitationScreen> {
         child: Column(
           children: [
             Center(
-              child: Image,
-            )
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
             Expanded(
               child: Center(
                 child: citation.isEmpty
@@ -228,41 +235,55 @@ class NotificationService {
   }
 
   Future<void> scheduleNotificationEvery6Hours() async {
-    await _notificationsPlugin.zonedSchedule(
-      0,
-      'Citation inspirante',
-      'Ouvre Inspire-moi pour découvrir une nouvelle citation !',
-      _nextInstanceAfter(const Duration(minutes: 1)),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'inspire_channel',
-          'Inspire-moi Channel',
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      final response = await http.get(Uri.parse('https://zenquotes.io/api/random'));
+      String message = 'Découvre une nouvelle citation !';
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final quote = data[0]['q'] ?? "Citation indisponible";
+        final author = data[0]['a'] ?? "Inconnu";
+        message = '"$quote" - $author';
+      }
+
+      await _notificationsPlugin.zonedSchedule(
+        0,
+        'Citation inspirante',
+        message,
+        _nextInstanceAfter(const Duration(seconds: 30)),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'inspire_channel',
+            'Inspire-moi Channel',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
         ),
-      ),
-      uiLocalNotificationDateInterpretation:
-      UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } catch (e) {
+      print('Erreur lors de la récupération de la citation : $e');
+    }
   }
 
-  Future<void> showTestNotification() async {
-    await _notificationsPlugin.show(
-      0,
-      'Test',
-      'Ceci est une notification de test',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'inspire_channel',
-          'Inspire-moi Channel',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-    );
-  }
+  // Future<void> showTestNotification() async {
+  //   await _notificationsPlugin.show(
+  //     0,
+  //     'Test',
+  //     'Ceci est une notification de test',
+  //     const NotificationDetails(
+  //       android: AndroidNotificationDetails(
+  //         'inspire_channel',
+  //         'Inspire-moi Channel',
+  //         importance: Importance.max,
+  //         priority: Priority.high,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   tz.TZDateTime _nextInstanceAfter(Duration duration) {
     final now = tz.TZDateTime.now(tz.local);
